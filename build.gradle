@@ -1,0 +1,52 @@
+buildscript {
+    ext.kotlin_version = '1.2.30'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+plugins {
+    id "java"
+    id "org.jetbrains.kotlin.jvm" version "1.2.30"
+    id "us.kirchmeier.capsule" version "1.0.2"
+}
+
+group 'org.team1540'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    jcenter()
+    flatDir {
+        dirs "libs/"
+    }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib"
+    compile name: "pathfinder"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
+    compile 'com.beust:klaxon:2.1.10'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+kotlin {
+    experimental {
+        coroutines "enable"
+    }
+}
+
+task fatCapsule(type: FatCapsule) {
+    applicationClass 'org.team1540.profilegen.Main'
+}
