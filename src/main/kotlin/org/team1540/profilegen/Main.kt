@@ -53,6 +53,63 @@ fun main(args: Array<String>) {
         val path = profilesJson.obj(key)
                 ?: throw RuntimeException("Item at key $key is not a valid JSON object")
         val flip = path.boolean("flip") ?: paramError("flip", key)
+
+
+        val fitMethod = when (path.string("fitMethod")) {
+            "HERMITE_CUBIC" -> Trajectory.FitMethod.HERMITE_CUBIC
+            "HERMITE_QUINTIC" -> Trajectory.FitMethod.HERMITE_QUINTIC
+            null -> null
+            else -> null.also { println("Warning: ${path.string("fitMethod")} is not a valid fit method, reverting to default") }
+        }
+
+        val samplesInput = try {
+            path.string("samples")
+        } catch (_: ClassCastException) {
+            try {
+                path.int("samples")
+            } catch (_: ClassCastException) {
+                null.also { println("Warning: samples parameter in path $key is not a valid sample amount, reverting to default") }
+            }
+        }
+
+        val samples = when (samplesInput) {
+            "HIGH" -> Trajectory.Config.SAMPLES_HIGH
+            "LOW" -> Trajectory.Config.SAMPLES_LOW
+            "FAST" -> Trajectory.Config.SAMPLES_FAST
+            is Int -> samplesInput
+            else -> null
+        }
+
+        val dt = try {
+            path.goodDouble("dt")
+        } catch (_: ClassCastException) {
+            null
+        }
+
+        val maxVel = try {
+            path.goodDouble("maxVel")
+        } catch (_: ClassCastException) {
+            null
+        }
+
+        val maxAccel = try {
+            path.goodDouble("maxAccel")
+        } catch (_: ClassCastException) {
+            null
+        }
+
+        val maxJerk = try {
+            path.goodDouble("maxJerk")
+        } catch (_: ClassCastException) {
+            null
+        }
+
+        val wheelbase = try {
+            path.goodDouble("wheelbase")
+        } catch (_: ClassCastException) {
+            null
+        }
+
         val points: MutableList<Waypoint> = LinkedList()
         path.array<JsonObject>("points")?.forEachIndexed { i, point ->
             val x = point.goodDouble("x")
@@ -64,12 +121,21 @@ fun main(args: Array<String>) {
                 throw RuntimeException("Parameters in path $key point $i are missing or invalid")
             }
         } ?: paramError("points", key)
-        paths[key] = Path(generate(points.toTypedArray(), config), flip)
+        paths[key] = Path(generate(points.toTypedArray(), config),
+                flip,
+                Trajectory.Config(
+                        fitMethod ?: config!!.fit,
+                        samples ?: config!!.sample_count,
+                        dt ?: config!!.dt,
+                        maxVel ?: config!!.max_velocity,
+                        maxAccel ?: config!!.max_acceleration,
+                        maxJerk ?: config!!.max_jerk
+                ), wheelbase ?: width!!)
     }
 
     // perform post-processing
     for ((name, path) in paths.entries) {
-        val mod = TankModifier(path.trajectory).modify(width!!)
+        val mod = TankModifier(path.trajectory).modify(path.wheelbase)
 
         val leftTrajectory: Trajectory
         val rightTrajectory: Trajectory
@@ -112,7 +178,7 @@ private fun paramError(paramName: String, key: String): Nothing = throw RuntimeE
 private fun Properties.getPropertyOrExit(name: String): String = getProperty(name)
         ?: throw RuntimeException("Property $name not found in trajectory.properties file")
 
-private data class Path(val trajectory: Trajectory, val flip: Boolean)
+private data class Path(val trajectory: Trajectory, val flip: Boolean, val config: Trajectory.Config, val wheelbase: Double)
 
 fun JsonObject.goodDouble(key: String): Double? {
     return try {
