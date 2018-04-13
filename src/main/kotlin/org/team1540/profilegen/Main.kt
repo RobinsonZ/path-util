@@ -149,7 +149,7 @@ fun main(args: Array<String>) {
                         -it.velocity,
                         -it.acceleration,
                         -it.jerk,
-                        -it.heading)
+                        it.heading)
             }.toTypedArray())
             rightTrajectory = Trajectory(mod.leftTrajectory.segments.map {
                 Trajectory.Segment(
@@ -160,7 +160,7 @@ fun main(args: Array<String>) {
                         -it.velocity,
                         -it.acceleration,
                         -it.jerk,
-                        -it.heading)
+                        it.heading)
             }.toTypedArray())
         } else {
             leftTrajectory = mod.leftTrajectory
