@@ -122,8 +122,7 @@ fun main(args: Array<String>) {
                 throw RuntimeException("Parameters in path $key point $i are missing or invalid")
             }
         } ?: paramError("points", key)
-        paths[key] = Path(generate(points.toTypedArray(), config),
-                flip,
+        paths[key] = Path(generate(points.toTypedArray(),
                 Trajectory.Config(
                         fitMethod ?: config!!.fit,
                         samples ?: config!!.sample_count,
@@ -131,7 +130,7 @@ fun main(args: Array<String>) {
                         maxVel ?: config!!.max_velocity,
                         maxAccel ?: config!!.max_acceleration,
                         maxJerk ?: config!!.max_jerk
-                ), wheelbase ?: width!!)
+                )), flip, wheelbase ?: width!!)
     }
 
     // perform post-processing
@@ -179,7 +178,7 @@ private fun paramError(paramName: String, key: String): Nothing = throw RuntimeE
 private fun Properties.getPropertyOrExit(name: String): String = getProperty(name)
         ?: throw RuntimeException("Property $name not found in trajectory.properties file")
 
-private data class Path(val trajectory: Trajectory, val flip: Boolean, val config: Trajectory.Config, val wheelbase: Double)
+private data class Path(val trajectory: Trajectory, val flip: Boolean, val wheelbase: Double)
 
 fun JsonObject.goodDouble(key: String): Double? {
     return try {
