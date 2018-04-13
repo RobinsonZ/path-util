@@ -52,15 +52,15 @@ fun main(args: Array<String>) {
     for (key in profilesJson.keys) {
         val path = profilesJson.obj(key)
                 ?: throw RuntimeException("Item at key $key is not a valid JSON object")
+        println("Generating profile $key")
         val flip = path.boolean("flip") ?: paramError("flip", key)
-
 
         val fitMethod = when (path.string("fitMethod")) {
             "HERMITE_CUBIC" -> Trajectory.FitMethod.HERMITE_CUBIC
             "HERMITE_QUINTIC" -> Trajectory.FitMethod.HERMITE_QUINTIC
             null -> null
             else -> null.also { println("Warning: ${path.string("fitMethod")} is not a valid fit method, reverting to default") }
-        }
+        }?.also { println("Overriding fitMethod for profile $key with value $it") }
 
         val samplesInput = try {
             path.string("samples")
@@ -78,34 +78,35 @@ fun main(args: Array<String>) {
             "FAST" -> Trajectory.Config.SAMPLES_FAST
             is Int -> samplesInput
             else -> null
-        }
+        }?.also { println("Overriding samples for profile $key with value $it") }
 
         val dt = try {
             path.goodDouble("dt")
+                    ?.also { println("Overriding dt for profile $key with value $it") }
         } catch (_: ClassCastException) {
             null
         }
 
         val maxVel = try {
-            path.goodDouble("maxVel")
+            path.goodDouble("maxVel")?.also { println("Overriding maxVel for profile $key with value $it") }
         } catch (_: ClassCastException) {
             null
         }
 
         val maxAccel = try {
-            path.goodDouble("maxAccel")
+            path.goodDouble("maxAccel")?.also { println("Overriding maxAccel for profile $key with value $it") }
         } catch (_: ClassCastException) {
             null
         }
 
         val maxJerk = try {
-            path.goodDouble("maxJerk")
+            path.goodDouble("maxJerk")?.also { println("Overriding maxJerk for profile $key with value $it") }
         } catch (_: ClassCastException) {
             null
         }
 
         val wheelbase = try {
-            path.goodDouble("wheelbase")
+            path.goodDouble("wheelbase")?.also { println("Overriding maxJerk for profile $key with value $it") }
         } catch (_: ClassCastException) {
             null
         }
