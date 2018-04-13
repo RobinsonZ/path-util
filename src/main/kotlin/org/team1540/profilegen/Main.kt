@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
     var config: Trajectory.Config? = null
     var width: Double? = null
     // load a config file
-    val rootPath = Paths.get(".").toAbsolutePath().normalize().toString();
+    val rootPath = Paths.get(".").toAbsolutePath().normalize().toString()
     Properties().apply {
         load(FileInputStream("$rootPath/trajectory.properties"))
         config = Trajectory.Config(
