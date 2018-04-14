@@ -11,16 +11,52 @@ import jaci.pathfinder.Waypoint
 import jaci.pathfinder.modifiers.TankModifier
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.nio.file.Paths
 import java.util.*
 import kotlin.collections.HashMap
+import java.util.Arrays.hashCode
 
 fun main(args: Array<String>) {
+    val rootPath = Paths.get(".").toAbsolutePath().normalize().toString()
+
+    // Make the generated directory if it isn't there
+    File("$rootPath/generated/").mkdir()
+
+    val inputStream: List<String>
+    val propertiesHash: Int
+    val profileHash: Int
+
+    try {
+        propertiesHash = getFileHash("$rootPath/profiles.json")
+        profileHash = getFileHash("$rootPath/trajectory.properties")
+
+        try {
+            inputStream = File("profileSettingsHashes.txt").readLines()
+
+            if (inputStream[0] != propertiesHash.toString() ||
+                    inputStream[1] != profileHash.toString() ||
+                    File("$rootPath/generated").list().isEmpty()) {
+                println("Profile config hashes do not match or generated folder is empty!")
+                generatePaths(rootPath)
+                writeHashesToFile(propertiesHash, profileHash)
+            } else {
+                println("Profile settings have not changed, no need to generate them again!")
+            }
+        } catch (_: FileNotFoundException) {
+            println("Could not get profile config hash file!")
+            generatePaths(rootPath)
+            writeHashesToFile(propertiesHash, profileHash)
+        }
+    } catch (_: FileNotFoundException) {
+        println("Profiles/trajectory properties files not found!")
+    }
+}
+
+private fun generatePaths(rootPath: String) {
     // load settings from properties file
     var config: Trajectory.Config? = null
     var width: Double? = null
-    // load a config file
-    val rootPath = Paths.get(".").toAbsolutePath().normalize().toString()
     Properties().apply {
         load(FileInputStream("$rootPath/trajectory.properties"))
         config = Trajectory.Config(
@@ -168,8 +204,8 @@ fun main(args: Array<String>) {
         }
 
         // write files
-        writeToCSV(File("$rootPath/${name}_left.csv"), leftTrajectory)
-        writeToCSV(File("$rootPath/${name}_right.csv"), rightTrajectory)
+        writeToCSV(File("$rootPath/generated/${name}_left.csv"), leftTrajectory)
+        writeToCSV(File("$rootPath/generated/${name}_right.csv"), rightTrajectory)
     }
 }
 
@@ -185,5 +221,15 @@ fun JsonObject.goodDouble(key: String): Double? {
         double(key)
     } catch (e: ClassCastException) {
         int(key)?.toDouble()
+    }
+}
+
+private fun getFileHash(path: String) = hashCode(File(path).readBytes())
+
+private fun writeHashesToFile(propertiesHash: Int, profileHash: Int) {
+    println("Writing updated file hashes...")
+    File("profileSettingsHashes.txt").printWriter().use { out ->
+        out.println(propertiesHash)
+        out.println(profileHash)
     }
 }
